@@ -1,0 +1,11 @@
+{
+  "DxeCore": {
+    "CompressionGuid": "ee4e5898-3914-4259-9d6e-dc7bd79403cf",
+    "FfsGuid": "fb5947af-7cb5-413e-8c1a-38167fcbe3ea"
+  },
+  "Paths": {
+    "FvLayout": "./Reference/Layouts/qemu_q35.inf",
+    "ReferenceFw": "./Reference/Binaries/QemuQ35/QEMUQ35_CODE.fd",
+    "Output": "QEMU_Q35_PATCHED_ROM.bin"
+  }
+}
