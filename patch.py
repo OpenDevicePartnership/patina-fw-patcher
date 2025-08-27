@@ -477,8 +477,10 @@ def _generate_new_ffs(config: Dict) -> None:
         step_text = f"[{step}]."
         logging.info(f'  {step_text} Running "{command[0]}"...')
         logging.debug(f"  {' ' * len(step_text)} Command = {command}\n")
+        exe_name = f"{command[0]}.exe" if os.name == "nt" else command[0]
+
         result = subprocess.run(
-            [_SCRIPT_DIR / "Executables" / command[0]] + command[1],
+            [_SCRIPT_DIR / "Executables" / exe_name] + command[1],
             check=True,
             capture_output=True,
             text=True,
