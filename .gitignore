@@ -1,5 +1,6 @@
-.vscode
-*venv*
-Build/**
-/*.bin
-/*.log
+*.profraw
+**/pdbhelper.dll
+/target
+Cargo.lock
+docs/book/
+docs/target/
