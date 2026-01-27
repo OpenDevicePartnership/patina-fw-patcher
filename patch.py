@@ -165,7 +165,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _patch_ref_binary(config: Dict[str, Dict]):
-    """Patches a refrence binary with the new Rust DXE Core.
+    """Patches a reference binary with the new Rust DXE Core.
 
     Args:
         config (Dict[str, Dict]): Configuration settings.
@@ -201,7 +201,7 @@ def _patch_ref_binary(config: Dict[str, Dict]):
             )
         except subprocess.CalledProcessError as e:
             raise RuntimeError(
-                f'\n\nFailed to run command: LzmaCompress\n\n{e.stdout}\n'
+                f"\n\nFailed to run command: LzmaCompress\n\n{e.stdout}\n"
             ) from e
         decompression_end = timeit.default_timer()
         logging.debug(f"  Output = {result.stdout}")
@@ -263,6 +263,20 @@ def _patch_ref_binary(config: Dict[str, Dict]):
 
             new_ffs_size = len(gen_ffs_data)
             logging.debug(f"New Rust DXE Core FV FFS size: {new_ffs_size}")
+
+            if new_ffs_size > old_ffs_size:
+                raise ValueError(
+                    f"\nPatch Failed: Rust DXE Core size mismatch:\n"
+                    f"  - New Rust DXE Core FFS size: {new_ffs_size}\n"
+                    f"  - Existing Rust DXE Core FFS size: {old_ffs_size}\n"
+                    f"Cause:\n"
+                    f"  - The Rust DXE Core embedded in the reference FD by stuart_build\n"
+                    f"    (from the DXECORE.QEMU external dependency) is smaller than the\n"
+                    f"    Rust DXE Core built locally by the build_and_run_rust_binary script.\n"
+                    f"Resolution:\n"
+                    f"  - Override the DXECORE.QEMU external dependency with the locally built version.\n"
+                    f"  - Rerun stuart_build and then execute the build_and_run_rust_binary script again.\n"
+                )
 
             out_bin.seek(offset)
             out_bin.write(gen_ffs_data)
