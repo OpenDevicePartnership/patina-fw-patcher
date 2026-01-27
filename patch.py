@@ -1,9 +1,9 @@
 # @file patch.py
 #
-# Patches a reference FW image with a new Rust DXE Core.
+# Patches a reference FW image with a new Patina DXE Core.
 #
 # This script is meant to be focused and fast for patching specific reference
-# firmware images with a new Rust DXE Core. It is not meant to be a general
+# firmware images with a new Patina DXE Core. It is not meant to be a general
 # purpose firmware patching tool.
 #
 # Copyright (c) Microsoft Corporation. All rights reserved.
@@ -20,18 +20,18 @@ import json
 from pathlib import Path, PurePath
 from typing import Dict
 
-PROGRAM_NAME = "Rust Firmware Patcher"
+PROGRAM_NAME = "Patina Firmware Patcher"
 
 # Spec-defined GUID for EFI Filesystem 2.
 _EFI_FILESYSTEM_2_GUID = "8c8ce578-8a3d-4f1c-9935-896185c32dd3"
 
-# GUID for the Rust DXE Core FFS file. This GUID is currently required for all
-# Rust DXE Core FFS files.
-_RUST_DXE_CORE_DEFAULT_FFS_GUID = "23c9322f-2af2-476a-bc4c-26bc88266c71"
+# GUID for the Patina DXE Core FFS file. This GUID is currently required for all
+# Patina DXE Core FFS files.
+_PATINA_DXE_CORE_DEFAULT_FFS_GUID = "23c9322f-2af2-476a-bc4c-26bc88266c71"
 
 # GUID that is used to find the FFS FV if another is not given. This is the
-# GUID value used for the Rust DXE Core FV in current Intel platforms firmware.
-_RUST_DXE_CORE_DEFAULT_FFS_FV_GUID = "71dad237-900f-4ea8-8dfd-93f8f8c704df"
+# GUID value used for the Patina DXE Core FV in current Intel platforms firmware.
+_PATINA_DXE_CORE_DEFAULT_FFS_FV_GUID = "71dad237-900f-4ea8-8dfd-93f8f8c704df"
 
 _SCRIPT_DIR = Path(__file__).parent
 
@@ -98,7 +98,7 @@ def _parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
         prog=PROGRAM_NAME,
-        description=("Patches a reference FW image with a new Rust DXE " "Core."),
+        description=("Patches a reference FW image with a new Patina DXE " "Core."),
         formatter_class=RawTextHelpFormatter,
     )
 
@@ -139,11 +139,11 @@ def _parse_args() -> argparse.Namespace:
         "--log-file",
         nargs="?",
         default=None,
-        const="rust_fw_patcher.log",
+        const="patina_fw_patcher.log",
         help="File path for log output.\n"
         "(default: if the flag is given with no "
         "file path then a file called\n"
-        "rust_fw_patcher.log is created and used "
+        "patina_fw_patcher.log is created and used "
         "in the current directory)\n\n",
     )
     io_opt_group.add_argument(
@@ -165,7 +165,7 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _patch_ref_binary(config: Dict[str, Dict]):
-    """Patches a reference binary with the new Rust DXE Core.
+    """Patches a reference binary with the new Patina DXE Core.
 
     Args:
         config (Dict[str, Dict]): Configuration settings.
@@ -247,7 +247,7 @@ def _patch_ref_binary(config: Dict[str, Dict]):
                 ],
                 byteorder="little",
             )
-            logging.debug(f"Original Rust DXE Core FV FFS size: {old_ffs_size}")
+            logging.debug(f"Original Patina DXE Core FV FFS size: {old_ffs_size}")
 
             # Open the newly generated FFS file
             if patch_cnt == 1:
@@ -259,23 +259,16 @@ def _patch_ref_binary(config: Dict[str, Dict]):
                     "Generated FFS data is empty, cannot patch the binary."
                 )
 
-            logging.info(f"Patching in new Rust DXE Core at 0x{offset:X}")
+            logging.info(f"Patching in new Patina DXE Core at 0x{offset:X}")
 
             new_ffs_size = len(gen_ffs_data)
-            logging.debug(f"New Rust DXE Core FV FFS size: {new_ffs_size}")
+            logging.debug(f"New Patina DXE Core FV FFS size: {new_ffs_size}")
 
             if new_ffs_size > old_ffs_size:
                 raise ValueError(
-                    f"\nPatch Failed: Rust DXE Core size mismatch:\n"
-                    f"  - New Rust DXE Core FFS size: {new_ffs_size}\n"
-                    f"  - Existing Rust DXE Core FFS size: {old_ffs_size}\n"
-                    f"Cause:\n"
-                    f"  - The Rust DXE Core embedded in the reference FD by stuart_build\n"
-                    f"    (from the DXECORE.QEMU external dependency) is smaller than the\n"
-                    f"    Rust DXE Core built locally by the build_and_run_rust_binary script.\n"
-                    f"Resolution:\n"
-                    f"  - Override the DXECORE.QEMU external dependency with the locally built version.\n"
-                    f"  - Rerun stuart_build and then execute the build_and_run_rust_binary script again.\n"
+                    f"\nPatch Failed: Patina DXE Core size mismatch:\n"
+                    f"  - New Patina DXE Core FFS size: {new_ffs_size}\n"
+                    f"  - Existing Patina DXE Core FFS size: {old_ffs_size}\n"
                 )
 
             out_bin.seek(offset)
@@ -293,7 +286,7 @@ def _patch_ref_binary(config: Dict[str, Dict]):
 
         if patch_cnt == 0:
             raise ValueError(
-                "Could not find an existing Rust DXE Core FFS "
+                "Could not find an existing Patina DXE Core FFS "
                 f"in {config['Paths']['ReferenceFw']} with GUID "
                 f"{{{config['DxeCore']['FfsGuid']}}}"
             )
@@ -337,7 +330,7 @@ def _parse_config(args: argparse.Namespace, conf_path: PurePath = None) -> Dict:
     if "DxeCore" not in config:
         config["DxeCore"] = {}
     if "FfsGuid" not in config["DxeCore"]:
-        config["DxeCore"]["FfsGuid"] = _RUST_DXE_CORE_DEFAULT_FFS_FV_GUID
+        config["DxeCore"]["FfsGuid"] = _PATINA_DXE_CORE_DEFAULT_FFS_FV_GUID
 
     if "Input" not in config["Paths"]:
         raise ValueError("An input file path is required.")
@@ -371,7 +364,7 @@ def _parse_config(args: argparse.Namespace, conf_path: PurePath = None) -> Dict:
 
 
 def _generate_new_ffs(config: Dict) -> None:
-    """Generates a new Rust DXE Core FFS file.
+    """Generates a new Patina DXE Core FFS file.
 
     Args:
         config (Dict): Configuration settings.
@@ -379,7 +372,7 @@ def _generate_new_ffs(config: Dict) -> None:
     import shutil
     import subprocess
 
-    logging.info("Generating new Rust DXE Core FFS:\n")
+    logging.info("Generating new Patina DXE Core FFS:\n")
 
     target_dir = config["Paths"]["BuildDir"]
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -412,7 +405,7 @@ def _generate_new_ffs(config: Dict) -> None:
                 "-t",
                 "EFI_FV_FILETYPE_DXE_CORE",
                 "-g",
-                _RUST_DXE_CORE_DEFAULT_FFS_GUID,
+                _PATINA_DXE_CORE_DEFAULT_FFS_GUID,
                 "-i",
                 str(target_dir / "DxeCore.pe32"),
                 "-oi",
