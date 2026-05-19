@@ -17,6 +17,8 @@ import sys
 import timeit
 import uuid
 import json
+import shutil
+import platform
 from pathlib import Path, PurePath
 from typing import Dict
 
@@ -34,6 +36,78 @@ _RUST_DXE_CORE_DEFAULT_FFS_GUID = "23c9322f-2af2-476a-bc4c-26bc88266c71"
 _RUST_DXE_CORE_DEFAULT_FFS_FV_GUID = "71dad237-900f-4ea8-8dfd-93f8f8c704df"
 
 _SCRIPT_DIR = Path(__file__).parent
+
+
+def _get_platform_exe_dir() -> Path | None:
+    """Return the platform-specific executable directory if it exists.
+
+    Returns:
+        Path to platform-specific directory (e.g., Darwin-ARM64) or None if
+        the current platform should use the default executables.
+    """
+    system = platform.system()
+    machine = platform.machine()
+
+    # Map platform to directory name
+    platform_dirs = {
+        ("Darwin", "arm64"): "Darwin-ARM64",
+        ("Darwin", "x86_64"): "Darwin-x86_64",
+        ("Linux", "aarch64"): "Linux-ARM64",
+        ("Linux", "x86_64"): None,  # Use default (root Executables dir)
+        ("Windows", "AMD64"): None,  # Use .exe files in root
+    }
+
+    dir_name = platform_dirs.get((system, machine))
+    if dir_name is None:
+        return None
+
+    platform_dir = _SCRIPT_DIR / "Executables" / dir_name
+    if platform_dir.exists():
+        return platform_dir
+    return None
+
+
+def _get_executable_path(exe_name: str) -> Path:
+    """Get the path to an executable, checking platform-specific directories first.
+
+    Args:
+        exe_name: Base name of the executable (e.g., "GenSec")
+
+    Returns:
+        Path to the executable
+    """
+    # Check for platform-specific binary first
+    platform_dir = _get_platform_exe_dir()
+    if platform_dir:
+        platform_exe = platform_dir / exe_name
+        if platform_exe.exists():
+            return platform_exe
+
+    # Fall back to default location
+    if os.name == "nt":
+        exe_name = f"{exe_name}.exe"
+    return _SCRIPT_DIR / "Executables" / exe_name
+
+
+def _make_exec_cmd(exe_path: Path) -> list:
+    """Return a command list for running exe_path, prefixed with qemu if necessary.
+
+    If the current machine is not x86_64 and a qemu-x86_64 binary is available
+    on PATH, return [qemu, exe_path]. Otherwise return [exe_path].
+    """
+    exe = str(exe_path)
+    # If running on non-x86 host, try to prefix with qemu-x86_64 if available
+    try:
+        host_arch = platform.machine()
+    except Exception:
+        host_arch = None
+
+    if host_arch not in (None, "x86_64", "amd64", "arm64"):
+        for qemu_name in ("qemu-x86_64", "qemu-x86_64-static"):
+            qemu_path = shutil.which(qemu_name)
+            if qemu_path:
+                return [qemu_path, exe]
+    return [exe]
 
 
 class _QuietFilter(logging.Filter):
@@ -482,26 +556,48 @@ def _generate_new_ffs(config: Dict) -> None:
         step_text = f"[{step}]."
         logging.info(f'  {step_text} Running "{command[0]}"...')
         logging.debug(f"  {' ' * len(step_text)} Command = {command}\n")
-        exe_name = f"{command[0]}.exe" if os.name == "nt" else command[0]
+        exe_path = _get_executable_path(command[0])
+
+        cmd = _make_exec_cmd(exe_path) + command[1]
 
         try:
             result = subprocess.run(
-                [_SCRIPT_DIR / "Executables" / exe_name] + command[1],
+                cmd,
                 check=True,
                 capture_output=True,
                 text=True,
             )
+            log_msg = f"  {' ' * len(step_text)} Output = " f"{str(result.stdout).rstrip()}"
+            if result.stdout:
+                logging.info(log_msg)
+            else:
+                logging.debug(log_msg)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(
-                f'\n\nFailed to run command: {"".join(str(command))}\n\n{e.stdout}\n'
-            ) from e
+            # Detect common qemu failure when the dynamic linker for x86_64 is missing
+            stderr = e.stderr or ""
+            if "Could not open '/lib64/ld-linux-x86-64.so.2'" in stderr or "ld-linux-x86-64.so.2" in stderr:
+                hint = (
+                    "qemu reported a missing x86_64 dynamic linker inside this container.\n"
+                    "This means the container does not have the x86_64 libc available to run\n"
+                    "the provided x86_64 helper executables. You have three options:\n\n"
+                    "  1) Run this workspace on an x86_64 host/container so the executables run natively.\n\n"
+                    "  2) Install the required amd64 libc inside this container (requires sudo):\n"
+                    "     sudo dpkg --add-architecture amd64\n"
+                    "     sudo apt-get update\n"
+                    "     sudo apt-get install -y libc6:amd64 libstdc++6:amd64\n\n"
+                    "  3) Build or obtain versions of the 'Executables' that match this container\n"
+                    "     architecture (e.g., arm64) and place them in the Executables folder.\n\n"
+                    "After performing one of these steps, re-run this script.\n"
+                )
+                logging.error(
+                    f"Command {cmd} failed with return code {e.returncode}\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}\n\n{hint}"
+                )
+                raise RuntimeError(hint)
 
-        log_msg = f"  {' ' * len(step_text)} Output = " f"{str(result.stdout).rstrip()}"
-
-        if result.stdout:
-            logging.info(log_msg)
-        else:
-            logging.debug(log_msg)
+            logging.error(
+                f"Command {cmd} failed with return code {e.returncode}\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
+            )
+            raise
 
     logging.info("")
 
