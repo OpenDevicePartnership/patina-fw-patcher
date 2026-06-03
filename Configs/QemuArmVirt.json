@@ -5,7 +5,6 @@
   },
   "Paths": {
     "FvLayout": "./Reference/Layouts/qemu_armvirt.inf",
-    "ReferenceFw": "./Reference/Binaries/QemuArmVirt/QEMU_EFI.fd.lzma",
     "Output": "QEMU_ARMVIRT_PATCHED_ROM.bin"
   }
 }
