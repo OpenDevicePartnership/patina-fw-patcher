@@ -1,0 +1,11 @@
+{
+  "DxeCore": {
+    "CompressionGuid": "ee4e5898-3914-4259-9d6e-dc7bd79403cf",
+    "FfsGuid": "7bb6c4a8-fecd-4f0d-9f5a-2e03add35b96"
+  },
+  "Paths": {
+    "FvLayout": "./Reference/Layouts/qemu_sbsa.inf",
+    "ReferenceFw": "./Reference/Binaries/QemuSbsa/QEMU_EFI.fd.lzma",
+    "Output": "QEMU_SBSA_PATCHED_ROM.bin"
+  }
+}
