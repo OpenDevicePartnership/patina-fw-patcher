@@ -327,6 +327,12 @@ def _parse_config(args: argparse.Namespace, conf_path: PurePath = None) -> Dict:
 
     if "Input" not in config["Paths"]:
         raise ValueError("An input file path is required.")
+    if "ReferenceFw" not in config["Paths"]:
+        raise ValueError(
+            "A reference firmware path is required. Provide it via the "
+            '"ReferenceFw" entry in the config file or the -r/--ref-fw-path '
+            "command-line argument."
+        )
 
     config["Paths"]["BuildDir"] = _SCRIPT_DIR / "Build" / config["Name"]
 

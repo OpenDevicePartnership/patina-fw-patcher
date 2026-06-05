@@ -30,6 +30,14 @@ python patch.py --config Configs/QemuQ35.json -i "C:\src\patina-dxe-core-qemu\ta
 python patch.py --config Configs/QemuSbsa.json -i "C:\src\patina-dxe-core-qemu\target\aarch64-unknown-uefi\debug\qemu_sbsa_dxe_core.efi"
 ```
 
+```sh
+python patch.py --config Configs/QemuArmVirt.json -i "C:\src\patina-dxe-core-qemu\target\aarch64-unknown-uefi\debug\qemu_armvirt_dxe_core.efi" -r "C:\src\patina-qemu\Build\QemuArmVirtPkg\DEBUG_CLANGPDB\FV\QEMU_EFI.fd"
+```
+
+Some configs (e.g. `QemuArmVirt.json`) do not ship a `ReferenceFw` entry because the firmware layout changes too
+frequently to keep a committed snapshot useful. For those configs, supply the reference firmware on the command line
+via `-r`, or add a `"ReferenceFw"` entry to a local copy of the config.
+
 The command-line arguments override equivalent values in the config file. It is recommended to also specify the config
 file for the platform target and then override what you'd like.
 
