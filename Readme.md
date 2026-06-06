@@ -27,10 +27,6 @@ python patch.py --config Configs/QemuQ35.json -i "C:\src\patina-dxe-core-qemu\ta
 ```
 
 ```sh
-python patch.py --config Configs/QemuSbsa.json -i "C:\src\patina-dxe-core-qemu\target\aarch64-unknown-uefi\debug\qemu_sbsa_dxe_core.efi"
-```
-
-```sh
 python patch.py --config Configs/QemuArmVirt.json -i "C:\src\patina-dxe-core-qemu\target\aarch64-unknown-uefi\debug\qemu_armvirt_dxe_core.efi" -r "C:\src\patina-qemu\Build\QemuArmVirtPkg\DEBUG_CLANGPDB\FV\QEMU_EFI.fd"
 ```
 
